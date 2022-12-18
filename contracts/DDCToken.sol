@@ -15,6 +15,7 @@ contract DDCToken is Ownable, ERC20 {
     uint DDCPer;
     mapping (address => uint) borrowTokenPer;
     uint borrowPercentage;
+    uint decimal = 10 ** 18; 
     
     mapping (address => uint) fallbackBalances;
 
@@ -60,14 +61,14 @@ contract DDCToken is Ownable, ERC20 {
             uint sendValue = msg.value / borrowTokenPer[DLPAddress] * borrowPercentage / 10;
             (bool success) = DLPToken.transfer(msg.sender, sendValue);
             require(success, "Fail to borrow");
-            _mint(msg.sender, sendValue / DDCPer);
+            _mint(msg.sender, sendValue / DDCPer * decimal);
         } else if(tokenAddress[0] == DLPAddress) {
             uint sendValue = amount * borrowTokenPer[DLPAddress] * borrowPercentage / 10;
             (bool success1) = DLPToken.transferFrom(msg.sender, address(this), amount);
             require(success1, "DLP token transfer fail.");
             (bool success2, ) = payable(msg.sender).call{value: sendValue}("");
             require(success2, "ERROR");
-            _mint(msg.sender, amount / DDCPer);
+            _mint(msg.sender, amount / DDCPer * decimal);
         }
     }
 
