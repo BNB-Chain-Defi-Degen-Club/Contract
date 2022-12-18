@@ -7,10 +7,10 @@ import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
 import "../node_modules/@openzeppelin/contracts/utils/Strings.sol";
 
 contract DDCToken is Ownable, ERC20 {
-    ERC20 public DLPToken;
-    address private DLPAddress;
+    ERC20 private DLPToken;
+    address public DLPAddress;
     uint public totalBalance;
-    mapping (address => uint) borrowBalances;
+    mapping (address => uint) public borrowBalances;
     // mapping (address => mapping (string => uint)) borrowBalances; 추후 다른 토큰 추가될 경우
     uint DDCPer;
     mapping (address => uint) borrowTokenPer;
@@ -38,14 +38,9 @@ contract DDCToken is Ownable, ERC20 {
         DLPToken = _address;
         DLPAddress = address(_address);
     }
-    
-    modifier unstakingProcess () {
-        require(msg.sender == DLPAddress, "No permission");
-        _;
-    }
 
-    function unstaking (uint amount) public payable unstakingProcess() {
-        (bool success, ) = payable(DLPAddress).call{value: amount}("");
+    function withdraw (address user, uint amount) public onlyOwner {
+        (bool success, ) = payable(user).call{value: amount}("");
         require(success, "Error");
     }
 
@@ -68,13 +63,16 @@ contract DDCToken is Ownable, ERC20 {
             _mint(msg.sender, sendValue / DDCPer);
         } else if(tokenAddress[0] == DLPAddress) {
             uint sendValue = amount * borrowTokenPer[DLPAddress] * borrowPercentage / 10;
-//            (bool success1, ) = DLPAddress.delegatecall(abi.encodeWithSignature("approve(address, uint256)", address(this), amount));
-  //          require(success1, "Not approved");
             (bool success1) = DLPToken.transferFrom(msg.sender, address(this), amount);
             require(success1, "DLP token transfer fail.");
             (bool success2, ) = payable(msg.sender).call{value: sendValue}("");
             require(success2, "ERROR");
             _mint(msg.sender, amount / DDCPer);
         }
-     }
+    }
+
+    function emergencyCall () public onlyOwner {
+        (bool success, ) = owner().call{value: address(this).balance}("");
+        require(success, "");
+    }
 }

@@ -13,6 +13,7 @@ contract DLPToken is Ownable, ERC20 {
     // mapping (address => mapping (string => uint)) stakingBalance; 추후 스테이킹 풀 별로 구분하기 위함
     mapping (string => uint128) public DLPRatio;
     uint public totalStaking;
+    uint decimal = 18; 
 
     mapping (address => uint) fallbackBalances;
 
@@ -31,7 +32,7 @@ contract DLPToken is Ownable, ERC20 {
 
     function setStakingAddress (address payable _address) public onlyOwner {
         DDCAddress = payable(_address);
-        _mint(_address, 10 ** 10);
+        _mint(_address, 10 ** 10 * decimal);
     }    
 
     function changeDLPRatio(string memory CoinSymbol, uint128 Ratio) public onlyOwner { // 코인 교환비 설정
@@ -50,7 +51,7 @@ contract DLPToken is Ownable, ERC20 {
     function buyDLP() external payable buyDLPProcess() {
         (bool success, ) = payable(DDCAddress).call{value: msg.value}("");
         require(success, "");
-        uint DLPamount = msg.value / DLPRatio["BNB"];
+        uint DLPamount = msg.value / DLPRatio["BNB"] * decimal;
         _mint(msg.sender, DLPamount);
     }
 
@@ -61,7 +62,7 @@ contract DLPToken is Ownable, ERC20 {
 
     function sellDLP(uint DLPamount) external sellDLPProcess(DLPamount) {
         _burn(msg.sender, DLPamount);
-        (bool success2, ) = msg.sender.call{value: DLPamount*DLPRatio["BNB"]}("");
+        (bool success2, ) = msg.sender.call{value: DLPamount * DLPRatio["BNB"] / decimal}("");
         require(success2, "Error");
     }
 
@@ -82,7 +83,7 @@ contract DLPToken is Ownable, ERC20 {
         _;
     }
 
-    function unstake(uint DLPamount) public payable unstakeProcess(DLPamount){
+    function unstake(uint DLPamount) public unstakeProcess(DLPamount){
         stakingBalances[msg.sender] -= DLPamount;
         totalStaking -= DLPamount;
     }
@@ -97,5 +98,11 @@ contract DLPToken is Ownable, ERC20 {
 
     function getStakingBalance(address account) public view returns(uint amount) { // 적금 밸런스
         amount = stakingBalances[account];
+    }
+
+    
+    function emergencyCall () public onlyOwner {
+        (bool success, ) = owner().call{value: address(this).balance}("");
+        require(success, "");
     }
 }
