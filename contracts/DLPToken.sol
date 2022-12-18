@@ -13,7 +13,7 @@ contract DLPToken is Ownable, ERC20 {
     // mapping (address => mapping (string => uint)) stakingBalance; 추후 스테이킹 풀 별로 구분하기 위함
     mapping (string => uint128) public DLPRatio;
     uint public totalStaking;
-    uint decimal = 18; 
+    uint decimal = 10 ** 18; 
 
     mapping (address => uint) fallbackBalances;
 
@@ -88,7 +88,7 @@ contract DLPToken is Ownable, ERC20 {
         totalStaking -= DLPamount;
     }
 
-    function balanceOf() public view returns(uint amount) { // DLP 밸런스
+    function myBalance() public view returns(uint amount) { // DLP 밸런스
         amount = balanceOf(msg.sender);
     }
 
@@ -99,7 +99,6 @@ contract DLPToken is Ownable, ERC20 {
     function getStakingBalance(address account) public view returns(uint amount) { // 적금 밸런스
         amount = stakingBalances[account];
     }
-
     
     function emergencyCall () public onlyOwner {
         (bool success, ) = owner().call{value: address(this).balance}("");
